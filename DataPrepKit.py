@@ -6,11 +6,12 @@ class DataPrepKit:
         self.data = pd.read_csv(file_path)
 
     def read_data(self, file_path, file_format='csv'):
-        if file_format == 'csv':
+        file_extension = file_path.split(".")[-1]
+        if file_extension == 'csv':
             self.data = pd.read_csv(file_path)
-        elif file_format == 'excel':
+        elif file_extension == 'excel':
             self.data = pd.read_excel(file_path)
-        elif file_format == 'json':
+        elif file_extension == 'json':
             self.data = pd.read_json(file_path)
         else:
             raise ValueError("Unsupported file format")
