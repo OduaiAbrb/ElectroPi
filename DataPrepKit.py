@@ -1,53 +1,75 @@
 import pandas as pd
 import numpy as np
+from DataPrepKit.missing_values import drop_missing_values, fill_missing_values
+from DataPrepKit.categorical_encoding import encode_categorical
+from DataPrepKit.outliers import detect_outliers
+from DataPrepKit.normalization import normalize_data
 
-class DataPrepKit:
-    def __init__(self, file_path):
-        self.data = pd.read_csv(file_path)
+def test_drop_missing_values():
+    data = pd.DataFrame({
+        'A': [1, 2, np.nan, 4],
+        'B': [5, np.nan, 7, 8],
+        'C': ['a', 'b', 'c', 'd']
+    })
+    expected_output = pd.DataFrame({
+        'A': [1.0, 2.0, 4.0],
+        'B': [5.0, 7.0, 8.0],
+        'C': ['a', 'b', 'd']
+    }, index=[0, 1, 3])
+    assert drop_missing_values(data).equals(expected_output)
 
-    def read_data(self, file_path, file_format='csv'):
-        file_extension = file_path.split(".")[-1]
-        if file_extension == 'csv':
-            self.data = pd.read_csv(file_path)
-        elif file_extension == 'excel':
-            self.data = pd.read_excel(file_path)
-        elif file_extension == 'json':
-            self.data = pd.read_json(file_path)
-        else:
-            raise ValueError("Unsupported file format")
+def test_fill_missing_values():
+    data = pd.DataFrame({
+        'A': [1, 2, np.nan, 4],
+        'B': [5, np.nan, 7, 8],
+        'C': ['a', 'b', 'c', 'd']
+    })
+    expected_output = pd.DataFrame({
+        'A': [1.0, 2.0, 3.0, 4.0],
+        'B': [5.0, 6.0, 7.0, 8.0],
+        'C': ['a', 'b', 'c', 'd']
+    })
+    assert fill_missing_values(data, method='mean').equals(expected_output)
 
-    def data_summary(self):
-        summary = self.data.describe()
-        return summary
+def test_encode_categorical():
+    data = pd.DataFrame({
+        'A': [1, 2, 3, 4],
+        'B': ['a', 'b', 'a', 'b'],
+        'C': ['x', 'y', 'x', 'y']
+    })
+    expected_output = pd.DataFrame({
+        'A': [1, 2, 3, 4],
+        'B_a': [1, 0, 1, 0],
+        'B_b': [0, 1, 0, 1],
+        'C': ['x', 'y', 'x', 'y']
+    })
+    assert encode_categorical(data, column='B', method='one-hot').equals(expected_output)
 
-    def handle_missing_values(self, strategy='remove'):
-        if strategy == 'remove':
-            self.data.dropna(inplace=True)
-        elif strategy == 'impute_mean':
-            self.data.fillna(self.data.mean(), inplace=True)
-        elif strategy == 'impute_median':
-            self.data.fillna(self.data.median(), inplace=True)
-        else:
-            raise ValueError("Invalid missing value handling strategy")
+def test_detect_outliers():
+    data = pd.DataFrame({
+        'A': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100],
+        'B': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 1000]
+    })
+    expected_output = pd.DataFrame({
+        'A': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        'B': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    })
+    assert detect_outliers(data, method='zscore', threshold=3).equals(expected_output)
 
-    def encode_categorical_data(self, columns):
-        encoded_data = pd.get_dummies(self.data, columns=columns)
-        return encoded_data
+def test_normalize_data():
+    data = pd.DataFrame({
+        'A': [1, 2, 3, 4, 5],
+        'B': [10, 20, 30, 40, 50]
+    })
+    expected_output = pd.DataFrame({
+        'A': [0.0, 0.25, 0.5, 0.75, 1.0],
+        'B': [0.0, 0.25, 0.5, 0.75, 1.0]
+    })
+    assert normalize_data(data).equals(expected_output)
 
-    def save_processed_data(self, file_path):
-        self.data.to_csv(file_path, index=False)
-
-# Example Usage:
 if __name__ == "__main__":
-    data_prep = DataPrepKit("data.csv")
-
-    data_prep.read_data("data.xlsx", file_format='excel')
-    data_prep.read_data("data.json", file_format='json')
-
-    summary = data_prep.data_summary()
-
-    data_prep.handle_missing_values(strategy='remove')
-
-    encoded_data = data_prep.encode_categorical_data(columns=['category_column'])
-
-    data_prep.save_processed_data("processed_data.csv")
+  test_drop_missing_values()
+  test_fill_missing_values()
+  test_encode_categorical()
+  test_detect_outliers()
+  test_normalize_data()
